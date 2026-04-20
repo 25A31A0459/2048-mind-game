@@ -1,0 +1,172 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define SIZE 4
+
+int board[SIZE][SIZE];
+
+// Function to print the board
+void printBoard() {
+    printf("\n-------------------------\n");
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (board[i][j] == 0)
+                printf("|    ");
+            else
+                printf("|%4d", board[i][j]);
+        }
+        printf("|\n-------------------------\n");
+    }
+}
+
+// Add a random tile (2 or 4)
+void addRandomTile() {
+    int empty[SIZE * SIZE][2];
+    int count = 0;
+
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++)
+            if (board[i][j] == 0) {
+                empty[count][0] = i;
+                empty[count][1] = j;
+                count++;
+            }
+
+    if (count > 0) {
+        int r = rand() % count;
+        int value = (rand() % 2) ? 2 : 4;
+        board[empty[r][0]][empty[r][1]] = value;
+    }
+}
+
+// Initialize board
+void initBoard() {
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++)
+            board[i][j] = 0;
+
+    addRandomTile();
+    addRandomTile();
+}
+
+// Compress row (move left)
+void compress(int row[]) {
+    int temp[SIZE] = {0};
+    int j = 0;
+    for (int i = 0; i < SIZE; i++)
+        if (row[i] != 0)
+            temp[j++] = row[i];
+
+    for (int i = 0; i < SIZE; i++)
+        row[i] = temp[i];
+}
+
+// Merge row (left)
+void merge(int row[]) {
+    for (int i = 0; i < SIZE - 1; i++) {
+        if (row[i] != 0 && row[i] == row[i + 1]) {
+            row[i] *= 2;
+            row[i + 1] = 0;
+        }
+    }
+}
+
+// Move left
+void moveLeft() {
+    for (int i = 0; i < SIZE; i++) {
+        compress(board[i]);
+        merge(board[i]);
+        compress(board[i]);
+    }
+}
+
+// Reverse row
+void reverse(int row[]) {
+    for (int i = 0; i < SIZE / 2; i++) {
+        int temp = row[i];
+        row[i] = row[SIZE - i - 1];
+        row[SIZE - i - 1] = temp;
+    }
+}
+
+// Transpose board
+void transpose() {
+    for (int i = 0; i < SIZE; i++)
+        for (int j = i + 1; j < SIZE; j++) {
+            int temp = board[i][j];
+            board[i][j] = board[j][i];
+            board[j][i] = temp;
+        }
+}
+
+// Move right
+void moveRight() {
+    for (int i = 0; i < SIZE; i++) {
+        reverse(board[i]);
+        compress(board[i]);
+        merge(board[i]);
+        compress(board[i]);
+        reverse(board[i]);
+    }
+}
+
+// Move up
+void moveUp() {
+    transpose();
+    moveLeft();
+    transpose();
+}
+
+// Move down
+void moveDown() {
+    transpose();
+    moveRight();
+    transpose();
+}
+
+// Check if moves are possible
+int canMove() {
+    for (int i = 0; i < SIZE; i++)
+        for (int j = 0; j < SIZE; j++) {
+            if (board[i][j] == 0)
+                return 1;
+            if (j < SIZE - 1 && board[i][j] == board[i][j + 1])
+                return 1;
+            if (i < SIZE - 1 && board[i][j] == board[i + 1][j])
+                return 1;
+        }
+    return 0;
+}
+
+int main() {
+    char move;
+    srand(time(NULL));
+
+    initBoard();
+
+    while (1) {
+        printBoard();
+        printf("Move (W/A/S/D), Q to quit: ");
+        scanf(" %c", &move);
+
+        switch (move) {
+            case 'a': case 'A': moveLeft(); break;
+            case 'd': case 'D': moveRight(); break;
+            case 'w': case 'W': moveUp(); break;
+            case 's': case 'S': moveDown(); break;
+            case 'q': case 'Q': exit(0);
+            default: printf("Invalid input!\n"); continue;
+        }
+
+        addRandomTile();
+
+        if (!canMove()) {
+            printBoard();
+            printf("Game Over!\n");
+            break;
+        }
+    }
+
+    return 0;
+}
